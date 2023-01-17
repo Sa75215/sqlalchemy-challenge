@@ -27,7 +27,8 @@ def homepage():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/<start>"
+        f"/api/v1.0/<start><br/>"
+        f"/api/v1.0/<start>/<end><br/>"
     )
 
 @app.route("/api/v1.0/precipitation")
@@ -71,24 +72,48 @@ def tobs():
         all_tobs_list.append(tobs_dict)
     return jsonify(all_tobs_list)
 
-@app.route("/api/v1.0/<start>")
-def start_temp(start):
+#dynamic route. if ony start date given, end date default is none.
+@app.route('/api/v1.0/<start>', defaults = {'end':None})
+@app.route("/api/v1.0/<start>/<end>")
+def temps_for_date_range(start, end):
+#Open session and do if statement where if end date is given, temp data calculated filters incorporate end dates to get range. if no end date given, temp calculations only use start date.
     session = Session(engine)
-    temp_list = session.query(measurement.date, measurement.tobs).all()
+    if end != None:
+        min_temp = session.query(func.min(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all()
+        max_temp = session.query(func.max(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all()
+        avg_temp = session.query(func.avg(measurement.tobs)).filter(measurement.date >= start).filter(measurement.date <= end).all()
+        
+    else:
+        min_temp = session.query(func.min(measurement.tobs)).filter(measurement.date >= start).all()
+        max_temp = session.query(func.max(measurement.tobs)).filter(measurement.date >= start).all()
+        avg_temp = session.query(func.avg(measurement.tobs)).filter(measurement.date >= start).all()
+    
     session.close()
+    
+    
+    #capture variables
+    print("min_temp output:", min_temp)
+    print("max_temp output:", max_temp)
+    print("avg_temp output:", avg_temp)
 
-    tobs_temp_list = []
-    for date, tobs in temp_list:
-        temp_dict = {}
-        temp_dict[date] = tobs
-        tobs_temp_list.append(temp_dict)
-    for temp_dict[date] in temp_list:
-        if temp_dict[date] == start:
-            min_temp = session.query(func.min(measurement.tobs)).filter(measurement.date >= start).all()
-            max_temp = session.query(func.max(measurement.tobs)).filter(measurement.date >= start).all()
-            avg_temp = session.query(func.avg(measurement.tobs)).filter(measurement.date >= start).all()
+    #go in to the variable and extract just the temps needed. current format is single tuple with single value and comma
+    min_temp = min_temp[0][0]
+    max_temp = max_temp[0][0]
+    avg_temp = avg_temp[0][0]
+
+    results = {
+        "Min temp": min_temp,
+        "Max temp": max_temp,
+        "Average temp": avg_temp
+     }
             #test to see if it works
-            return jsonify(min_temp)
+    
+    # print(jsonify(results))
+#if any of the data is missing below, the date range chosen doesn't have data needed and new date range should be chosen
+    if min_temp == None or max_temp == None or avg_temp == None:
+        return f"No temperature data found for the given date range. Try another date range."
+    else:
+        return jsonify(results)
 
 
 if __name__ == "__main__":
