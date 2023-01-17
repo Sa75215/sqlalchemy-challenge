@@ -96,7 +96,7 @@ def temps_for_date_range(start, end):
     print("max_temp output:", max_temp)
     print("avg_temp output:", avg_temp)
 
-    #go in to the variable and extract just the temps needed. current format is single tuple with single value and comma
+#     #go in to the variable and extract just the temps needed. current format is single tuple with single value and comma
     min_temp = min_temp[0][0]
     max_temp = max_temp[0][0]
     avg_temp = avg_temp[0][0]
@@ -106,9 +106,9 @@ def temps_for_date_range(start, end):
         "Max temp": max_temp,
         "Average temp": avg_temp
      }
-            #test to see if it works
+#             #test to see if it works
     
-    # print(jsonify(results))
+#     # print(jsonify(results))
 #if any of the data is missing below, the date range chosen doesn't have data needed and new date range should be chosen
     if min_temp == None or max_temp == None or avg_temp == None:
         return f"No temperature data found for the given date range. Try another date range."
